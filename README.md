@@ -45,7 +45,7 @@ The model is designed to work with spatial transcriptomics data in AnnData forma
    - `obs["Centroid_X"]`, `obs["Centroid_Y"]`: Spatial coordinates
    - `obs["Cell_class"]` or `obs["Neuron_cluster_ID"]`: Cell type information
 
-2. A companion AnnData object with precomputed spatial transcriptomics embeddings. Use [Novae](https://mics-lab.github.io/novae/) to extract the embeddings.
+2. A companion AnnData object with precomputed spatial transcriptomics embeddings from [Novae](https://mics-lab.github.io/novae/).
 
 ## Code Structure
 
