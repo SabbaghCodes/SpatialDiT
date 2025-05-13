@@ -27,12 +27,12 @@ The model architecture is flexible, supporting different types of conditioning b
 
 ```bash
 # Clone the repository
-git clone https://github.com/username/spatial-transcriptomics-diffusion.git
-cd spatial-transcriptomics-diffusion
+git clone https://github.com/SabbaghCodes/SpatialDiT.git
+cd SpatialDiT
 
 # Create a conda environment
-conda create -n st-dit python=3.9
-conda activate st-dit
+conda create -n spatial-dit python=3.9
+conda activate spatial-dit
 
 # Install dependencies
 pip install torch scanpy anndata numpy matplotlib wandb
