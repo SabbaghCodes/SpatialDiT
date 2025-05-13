@@ -41,11 +41,28 @@ def parse_args():
     parser.add_argument('--device', type=str, default='cuda', help='Device to use')
     parser.add_argument('--save_dir', type=str, default='results', help='Directory to save results')
     
+    # ADDED: Example run mode
+    parser.add_argument('--example', action='store_true', help='Run an example experiment with predefined parameters')
+    
     return parser.parse_args()
 
 def run_single_experiment(args, train_slices, test_slices):
     """
     Run a single experiment with specified train and test slices
+    
+    Parameters:
+    -----------
+    args : argparse.Namespace
+        Command line arguments
+    train_slices : list
+        List of slice indices to use for training
+    test_slices : list
+        List of slice indices to use for testing
+        
+    Returns:
+    --------
+    tuple
+        (evaluation loss, CSS score, PCC score)
     """
     test_slice_str = '_'.join(map(str, test_slices))
     print(f"Running experiment with block_type={args.block_type}, hidden_size={args.hidden_size}, "
@@ -182,7 +199,104 @@ def run_single_experiment(args, train_slices, test_slices):
     
     return avg_eval_loss, avg_eval_css, avg_eval_pcc
 
+# ADDED: Example experiment function
+def run_example_experiment():
+    """
+    Run an example experiment with predefined parameters to demonstrate SpatialDiT model.
+    
+    This function demonstrates a complete experiment using the SpatialDiT model 
+    on the Drosophila embryo dataset. It creates an optimized model configuration
+    and trains on 15 slices while testing on slice 224.
+    
+    Example command:
+    python main.py --example --data_path path/to/drosophila_data.h5ad --embeddings_path path/to/drosophila_embeddings.h5ad
+    
+    Note: This function modifies args in-place to set optimal hyperparameters.
+    
+    Returns:
+    --------
+    tuple
+        (evaluation loss, CSS score, PCC score)
+    """
+    print("=" * 80)
+    print("RUNNING EXAMPLE EXPERIMENT: 3D Reconstruction of Drosophila Embryo Data")
+    print("=" * 80)
+    
+    # Set optimal hyperparameters for Drosophila dataset
+    args.block_type = 'adaLN'  # Adaptive LayerNorm showed best performance
+    args.hidden_size = 256     # Hidden dimension size
+    args.num_layers = 6        # Number of transformer layers
+    args.num_heads = 16        # Number of attention heads
+    args.lr = 0.001            # Learning rate
+    args.batch_size = 64       # Batch size
+    args.epochs = 5            # Reduced epochs for example run (use 60 for full training)
+    args.timesteps = 1000      # Number of diffusion timesteps
+    
+    print("\nModel Configuration:")
+    print(f"  - Block Type: {args.block_type}")
+    print(f"  - Hidden Size: {args.hidden_size}")
+    print(f"  - Number of Layers: {args.num_layers}")
+    print(f"  - Number of Heads: {args.num_heads}")
+    print(f"  - Learning Rate: {args.lr}")
+    print(f"  - Batch Size: {args.batch_size}")
+    print(f"  - Epochs: {args.epochs} (reduced for example)")
+    print(f"  - Timesteps: {args.timesteps}")
+    
+    # For this example, we'll use a fixed test slice (224 for Drosophila)
+    test_slice = 224
+    
+    # Get available slices and separate train/test
+    slices = list(adata_full.obs["Bregma"].unique())
+    if test_slice not in slices:
+        print(f"Warning: Test slice {test_slice} not found. Using a random slice instead.")
+        test_slice = np.random.choice(slices)
+    
+    train_slices = [s for s in slices if s != test_slice]
+    test_slices = [test_slice]
+    
+    print(f"\nDataset Information:")
+    print(f"  - Total number of slices: {len(slices)}")
+    print(f"  - Training on {len(train_slices)} slices")
+    print(f"  - Testing on slice {test_slice}")
+    print(f"  - Total cells: {adata_full.n_obs}")
+    print(f"  - Number of genes: {adata_full.n_vars}")
+    
+    print("\nRunning experiment...")
+    results = run_single_experiment(args, train_slices, test_slices)
+    
+    print("\nExample Experiment Results:")
+    print(f"  - Evaluation Loss: {results[0]:.6f}")
+    print(f"  - Cell-type Spearman Score (CSS): {results[1]:.4f}")
+    print(f"  - Pearson Correlation Coefficient (PCC): {results[2]:.4f}")
+    print("\nResults saved to:", args.save_dir)
+    print("=" * 80)
+    
+    return results
+
 def main():
+    """
+    Main function to run SpatialDiT experiments.
+    
+    This function handles several experiment modes:
+    1. Example mode: Runs a demo with predefined settings
+    2. Leave-one-out cross-validation: Tests on each slice while training on others
+    3. Single test slice: Tests on a specified slice
+    4. Random split: Randomly selects a test slice
+    
+    Example commands:
+    ----------------
+    # Run the example experiment:
+    python main.py --example --data_path drosophila_data.h5ad --embeddings_path drosophila_embeddings.h5ad
+    
+    # Run with specific test slice:
+    python main.py --test_slice 224 --data_path drosophila_data.h5ad --embeddings_path drosophila_embeddings.h5ad
+    
+    # Run leave-one-out cross-validation:
+    python main.py --leave_one_out --data_path merfish_all-slices.h5ad --embeddings_path merfish_novae_embeding.h5ad
+    
+    # Run with custom hyperparameters:
+    python main.py --block_type adaLN --hidden_size 256 --num_layers 12 --num_heads 8 --lr 0.0001
+    """
     args = parse_args()
     
     # Set random seed for reproducibility
@@ -198,7 +312,9 @@ def main():
     
     # Load data
     global adata_full, st_embeddings
+    print(f"Loading data from {args.data_path}...")
     adata_full = sc.read_h5ad(args.data_path)
+    print(f"Loading embeddings from {args.embeddings_path}...")
     st_embeddings = sc.read_h5ad(args.embeddings_path)
     
     # Round bregma values to integers
@@ -207,6 +323,11 @@ def main():
     # Get unique bregma slices
     slices = list(adata_full.obs["Bregma"].unique())
     print(f"Available bregma slices: {slices}")
+    
+    # ADDED: Example run mode
+    if args.example:
+        run_example_experiment()
+        return
     
     if args.leave_one_out:
         # Run leave-one-out cross-validation
