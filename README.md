@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains a modular implementation of a Diffusion Transformer (DiT) model for spatial transcriptomics data. The model uses diffusion processes to generate gene expression profiles conditioned on spatial coordinates, cell types, and learned embeddings.
+This repository contains a modular implementation of a Diffusion Transformer (DiT) model for spatial transcriptomics data. The model uses diffusion processes to generate gene expression profiles conditioned on spatial coordinates, cell types, and learned embeddings. This project was developed as part of the CS 283: Deep Generative Modeling course at King Abdullah University of Science and Technology (KAUST), under the supervision of Professor Mohamed Elhoseiny.
 
 The model architecture is flexible, supporting different types of conditioning blocks:
 - Adaptive Layer Normalization (adaLN)
