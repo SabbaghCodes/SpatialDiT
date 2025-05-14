@@ -52,7 +52,7 @@ The model is designed to work with spatial transcriptomics data in AnnData forma
 ## Code Structure
 
 ```
-spatial_transcriptomics_diffusion/
+SpatialDiT/
 ├── data/
 │   └── dataset.py             # Dataset loading and processing
 ├── models/
